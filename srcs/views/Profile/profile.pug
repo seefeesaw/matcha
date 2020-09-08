@@ -1,0 +1,195 @@
+extends ../layout
+
+block style
+    style.
+        .img-thumbnail {
+            margin: 5px;
+        }
+        [data-toggle="tooltip"] {
+            cursor: pointer;
+        }
+        span.username {
+            font-weight: 200;
+            margin-left: 10px;
+        }
+        span.online {
+            width: 20px;
+            height: 20px;
+            display: block!important;
+            border-radius: 50%;
+            position: absolute;
+            right: -5px;
+            top: -10px;
+        }
+
+block content
+    .container.mt-5
+
+        if user.blocked
+            .alert.alert-danger You have blocked this user.
+
+        .row
+
+            .col-md-3
+
+                .card
+                    img.card-img-top(src=user.profile_pic, alt='Profile picture')
+                    .online-badge
+                        if user.active
+                            span.badge.badge-success.online(data-toggle='tooltip', data-placement='top', title='Connected')
+                    .card-body
+                        h5.card-title.mb-2 #{user.name}
+                            span.badge.badge-info.username
+                                small
+                                    strong aka
+                                | &nbsp;#{user.username}
+                            | #{user.last_name}
+                        p.card-text
+                            span(data-toggle='tooltip', title='Location', data-placement='top')
+                                i.fa.fa-map-marker
+                                | &nbsp; #{user.location}
+                            br
+                            span(data-toggle='tooltip', title='Age', data-placement='top')
+                                i.fa.fa-sort-numeric-down
+                                | &nbsp; #{user.age} years
+                            br
+                            span(data-toggle='tooltip', title='Sex', data-placement='top')
+                                if user.gender === 'men'
+                                    i.fa.fa-male
+                                    | &nbsp;&nbsp; Man
+                                else if user.gender === 'women'
+                                    i.fa.fa-female
+                                    | &nbsp;&nbsp; Women
+                                else
+                                    i.fa.fa-genderless
+                                    | &nbsp; Other
+                            br
+                            span(data-toggle='tooltip', title='Sexual orientation', data-placement='top')
+                                i.fa.fa-transgender
+                                | &nbsp;&nbsp;&nbsp;
+                                if user.sexual_orientation === 'hetero'
+                                    | Heterosexual
+                                else if user.sexual_orientation === 'homo'
+                                    | Homosexual
+                                else
+                                    | Bisexual
+                            br
+                            span(data-toggle='tooltip', title='Popularity score', data-placement='top')
+                                i.fa.fa-star
+                                | &nbsp; #{user.popularity || '0'}
+                            if !user.active
+                                br
+                                span(data-toggle='tooltip', title='last connection', data-placement='top')
+                                    i.fa.fa-sign-in-alt
+                                    | &nbsp; #{moment(user.last_login).fromNow()}
+                        if user.uploads.length > 0 && user.id !== userId
+                            a.btn.btn-danger.btn-block.like(href='#', data-like-status=user.liked ? '1' : '0')
+                                i.fa.fa-heart
+                                if user.liked
+                                    | &nbsp;&nbsp;
+                                    span.text I no longer like
+                                else
+                                    | &nbsp;&nbsp;
+                                    span.text I like
+                            if user.liked_you
+                                p.text-danger.text-center
+                                    small
+                                        em This user likes your profile.
+
+                if user.id === userId && user.visitors.length > 0
+                    .card.mt-2
+                        .card-body
+                            h5 My recent visitors
+                            hr
+
+                            each visit in user.visitors
+                                img.img-thumbnail(src=visit.profile_pic, width=50, height=50, data-toggle='tooltip', data-placement='top', title=visit.username)
+                if user.id === userId && user.likes.length > 0
+                    .card.mt-2
+                        .card-body
+                            h5 People who love me
+                            hr
+
+                            each liker in user.likes
+                                img.img-thumbnail(src=liker.profile_pic, width=50, height=50, data-toggle='tooltip', data-placement='top', title=liker.username)
+
+
+            .col-md-9
+
+                .card
+                    if user.id !== userId
+                        .card-header
+                            ul.nav.justify-content-end
+                                li.nav-item
+                                    a.nav-link.btn.btn-danger.active.block-user(data-toggle='tooltip', title="Do not see the user anymore", data-placement='top')
+                                        if user.blocked
+                                            | Unblock
+                                        else
+                                            | Block
+                                li.nav-item
+                                    a.nav-link.report-user(data-toggle='tooltip', title="Report the user as a fake account", data-placement='top') Report
+                    .card-body
+                        h5.card-title Biography
+                        p.card-text #{user.biography}
+                        hr
+                        h5.card-title Interests
+                        each tag in user.tags.split(',')
+                            span.badge.badge-primary.ml-1.mr-1.p-2 #{tag}
+
+                hr
+
+                .card
+                    .card-body
+                        h3 Her photos
+                        hr
+
+                        each photo in user.uploads
+                            if !photo.is_profile_pic
+                                img.img-thumbnail(src='/uploads/pics/' + photo.name, width=300, height=300)
+
+
+
+block scripts
+    script(type='text/javascript').
+        socket.on('connect', function () {
+            socket.on('user-active', function (userId) {
+                if (parseInt(userId) === parseInt('#{user.id}') && !$('.online-badge').find('.badge').length)
+                    $('.online-badge').html('<span class="badge badge-success online" data-toggle="tooltip" data-placement="top" title="" data-original-title="Connected"></span>');
+                $('[data-toggle="tooltip"]').tooltip({
+                    container: 'body'
+                });
+            });
+            socket.on('user-disconnect', function (userId) {
+                if (parseInt(userId) === parseInt('#{user.id}') && $('.online-badge').find('.badge').length)
+                    $('.online-badge').find('.badge').remove();
+            });
+        });
+        $('[data-toggle="tooltip"]').tooltip({
+            container: 'body'
+        });
+        $('.block-user').on('click', function (e) {
+            e.preventDefault();
+
+            $.get('/#{user.username}/block', function () {
+                document.location = '/#{user.username}';
+            });
+        });
+        $('.report-user').on('click', function (e) {
+            e.preventDefault();
+
+            $.get('/#{user.username}/report', function () {});
+            $('#' + $(this).attr('aria-describedby')).remove();
+            $(this).remove();
+        });
+        $('.like').on('click', function (e) {
+            e.preventDefault();
+            var button = $(this);
+            var status = parseInt(button.attr('data-like-status'));
+
+            $.get('/#{user.username}/like', function () {});
+            if (status)
+                button.find('.text').html("I like");
+            else
+                button.find('.text').html("I no longer like");
+            button.attr('data-like-status', status ? '0' : '1');
+        })

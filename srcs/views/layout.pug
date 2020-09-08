@@ -1,0 +1,80 @@
+doctype html
+html(lang='en')
+    head
+        meta(charset='utf-8')
+        meta(name='viewport', content='width=device-width, initial-scale=1, shrink-to-fit=no')
+        link(rel='icon', href='/assets/favicon.ico')
+        title #{title}
+        // Bootstrap core CSS
+        link(rel='stylesheet', href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css', integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm', crossorigin='anonymous')
+        link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css')
+        script(defer='', src='https://use.fontawesome.com/releases/v5.0.4/js/all.js')
+        style.
+            .dropdown-toggle::after {
+                display: none;
+            }
+            @media (max-width: 765px) {
+                nav a {
+                    display: block;
+                    text-align: center;
+                }
+            }
+        block style
+    body
+        .d-flex.flex-column.flex-md-row.align-items-center.p-3.px-md-4.bg-white.border-bottom.box-shadow
+            h5.my-0.mr-md-auto.font-weight-normal 
+            if (isLogged)
+                nav.my-2.my-md-0.mr-md-3
+                    a.p-2.text-dark(href='/view-match') Suggestions
+                    a.p-2.text-dark(href='/find') Find profiles
+                    a.p-2.text-dark(href='/chat') Messaging
+                    a.p-3.text-dark.notification-bell.dropdown-toggle(href='#', data-toggle='dropdown')
+                        i.far.fa-bell
+                    .dropdown-menu
+                        ul.list-group
+                a.btn.btn-outline-primary(href='/account') My account
+                a.btn.btn-outline-secondary(href='/signout', style="margin-left: 5px") Sign out
+
+        block content
+
+        .container
+
+            footer.pt-4.my-md-5.pt-md-5.border-top
+                .row
+                    .col-12.col-md
+                        small.d-block.mb-3.text-muted ©2020Matcha
+
+        script(src='https://code.jquery.com/jquery-3.3.1.min.js')
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js', integrity='sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q', crossorigin='anonymous')
+        script(src='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js', integrity='sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl', crossorigin='anonymous')
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js')
+        script(src='https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js')
+        script(src='/assets/js/form.js')
+        if isLogged
+            script(type='text/javascript').
+                var IS_CHAT_PAGE = false;
+                var socket = io();
+                var notifications = !{JSON.stringify(notifications)}
+                if (notifications.length > 0)
+                    $('.notification-bell').html('<i class="fa fa-bell"></i>');
+                for (var j = 0; j < notifications.length; j++)
+                    $('.notification-bell').parent().find('.dropdown-menu ul').prepend('<li class="list-group-item">' + notifications[j].content + '</li>');
+                socket.emit('user-active', {userId: '#{userId}'});
+                socket.on('new-notification', function (data) {
+                    if (data.type === 'chat' && IS_CHAT_PAGE) {
+                        $.get('/notifications/' + data.id + '/seen', function () {});
+                        return;
+                    }
+                   notifications.push(data);
+                   toastr.info(data.content);
+                   $('.notification-bell').html('<i class="fa fa-bell"></i>');
+                   $('.notification-bell').parent().find('.dropdown-menu ul').prepend('<li class="list-group-item">' + data.content + '</li>');
+                });
+                $('.notification-bell').on('click', function (e) {
+                    for (var i = 0; i < notifications.length; i++)
+                        $.get('/notifications/' + notifications[i].id + '/seen', function () {});
+                    notifications = [];
+                    $('.notification-bell').html('<i class="far fa-bell"></i>');
+                    $('.notification-bell').dropdown();
+                });
+        block scripts

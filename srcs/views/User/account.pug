@@ -1,0 +1,224 @@
+extends ../layout
+
+block style
+    link(rel='stylesheet', href='/assets/css/bootstrap-tagsinput.css')
+    style.
+        .img-thumbnail {
+            margin: 5px;
+        }
+        .photo {
+            display: inline-block;
+            position: relative;
+        }
+        .photo a {
+            position: absolute;
+            top: -5px;
+            right: 0;
+        }
+        .photo a .badge {
+            padding: 10px 12px;
+        }
+        .photo a:nth-child(2) {
+            right: 40px;
+        }
+
+
+block content
+    .jumbotron.jumbotron-fluid
+        .container
+            h1.display-4 #{user.name}
+            p.lead
+                | You are registered
+    .container
+        .row
+            .col-md-6
+                .card
+                    .card-body
+                        h4 Edit my main information
+                        hr
+
+                        form(data-ajax, method='post', action='/account', data-ajax-callback='afterInfosUpdate')
+                            .form-group
+                                label First name
+                                input.form-control(type='text', value=user.name, name='name')
+                            .form-group
+                                label Last name
+                                input.form-control(type='text', value=user.last_name, name='last_name')
+                            .form-group
+                                label username
+                                input.form-control(type='text', value=user.username, name='username')
+                                small.form-text.text-muted Your nickname is displayed to other users
+                            .form-group
+                                label Email
+                                input.form-control(type='email', value=user.email, name='email')
+                                small.form-text.text-muted Your email will remain confidential
+
+                            button.btn.btn-primary(type='submit')
+                                i.fa.fa-save
+                                | &nbsp;&nbsp;Save
+
+
+            .col-md-6
+                .card
+                    .card-body
+                        h4 Change my password
+                        hr
+
+                        form(data-ajax, method='post', action='/account/password')
+                            .form-group
+                                label Password
+                                input.form-control(type='password', name='password')
+                                small.form-text.text-muted Your password must be secure
+                            .form-group
+                                label Password Confirmation
+                                input.form-control(type='password', name='password_confirmation')
+
+                            button.btn.btn-primary(type='submit')
+                                i.fa.fa-save
+                                | &nbsp;&nbsp;Save
+
+        hr
+        .row.mt-2
+            .col-md-12
+
+                .card
+                    .card-body
+                        h4 Edit my profile
+                        hr
+
+                        if (account.gender.length === 0)
+                            .alert.alert-warning
+                                h4 Fill out your profile
+
+                        form(data-ajax, method='post', action='/account/bio')
+
+                            .row
+                                .col-md-4
+                                    .form-group
+                                        label Sex
+                                        select.form-control(name='gender')
+                                            option(value='men', selected=account.gender === 'men') Man
+                                            option(value='women', selected=account.gender === 'women') Women
+                                            
+                                .col-md-4
+                                    .form-group
+                                        label Sexual orientation
+                                        select.form-control(name='sexual_orientation')
+                                            option(value='hetero', selected=account.sexual_orientation === 'hetero') Heterosexual
+                                            option(value='homo', selected=account.sexual_orientation === 'homo') Homosexual
+                                            option(value='bi', selected=account.sexual_orientation === 'bi') Bisexual
+
+                                .col-md-4
+                                    .form-group
+                                        label Age
+                                        input.form-control(type='number', step='1', name='age', value=account.age)
+
+                            .form-group
+                                label Biography
+                                textarea.form-control(name='biography', rows=4) #{account.biography}
+                                small.form-text.text-muted Provide a short and precise biography
+                            .form-group
+                                label List of interests
+                                input.form-control(type='text', name='tags', data-role='tagsinput', value=account.tags)
+                            .form-group
+                                label Location
+                                input.form-control(type='text', name='location', value=account.location)
+
+                            button.btn.btn-primary(type='submit')
+                                i.fa.fa-save
+                                | &nbsp;&nbsp;Save
+                            a.btn.btn-outline-success.ml-2.profile-link(href='/' + user.username)
+                                i.fa.fa-user
+                                | &nbsp; See my profile
+
+        hr
+        .row.mt-2
+            .col-md-12
+
+                .card
+                    .card-body
+                        h4 My pictures
+                        hr
+
+                        form(method='post', action='/account/photo', enctype='multipart/form-data' data-ajax, data-ajax-callback='afterPostPhoto')
+
+                            .form-group
+                                label Send a photo
+                                .custom-file
+                                    input#file.custom-file-input(type='file', name='picture')
+                                    label.custom-file-label(for='file') Choose a file
+
+                            button.btn.btn-primary(type='submit')
+                                i.fa.fa-share-square
+                                | &nbsp;&nbsp;To send
+
+                        hr
+
+                        h5 List of my photos
+
+                        .photos-list
+                            each photo in photos
+                                .photo
+                                    img.img-thumbnail(src='/uploads/pics/' + photo.name, width=300, height=300)
+                                    if !photo.is_profile_pic
+                                        a.set-profile-pic(href='', data-photo-id=photo.id, data-toggle='tooltip' data-placement='top' title='Save this photo as a profile photo')
+                                            span.badge.badge-pill.badge-primary
+                                                i.fa.fa-thumbtack
+                                    a.remove-pic(href='', data-photo-id=photo.id, data-toggle='tooltip' data-placement='top' title='Delete this photo')
+                                        span.badge.badge-pill.badge-danger
+                                            i.fa.fa-eraser
+
+
+block scripts
+    script(type='text/javascript', src='/assets/js/bootstrap-tagsinput.min.js')
+    script(type='text/javascript', src='https://maps.googleapis.com/maps/api/js?key=' + googleApiKey + '&libraries=places')
+    script(type='text/javascript').
+        $('input[type="file"]').on('change', function (e) {
+            $(this).parent().find('.custom-file-label').html($(this).val());
+        })
+        $('[data-toggle="tooltip"]').tooltip({
+            container: 'body'
+        })
+        function initPhotosEvents() {
+            $('.remove-pic').unbind('click');
+            $('.remove-pic').on('click', function (e) {
+                e.preventDefault();
+                var button = $(this);
+                var photoId = button.attr('data-photo-id');
+                var tooltipId = button.attr('aria-describedby');
+                $('#' + tooltipId).remove();
+                button.parent().remove();
+                $.ajax({
+                    method: 'DELETE',
+                    url: '/account/photo/' + photoId
+                })
+            });
+            $('.set-profile-pic').unbind('click');
+            $('.set-profile-pic').on('click', function (e) {
+                e.preventDefault();
+                var button = $(this);
+                var photoId = button.attr('data-photo-id');
+                var tooltipId = button.attr('aria-describedby');
+                $('#' + tooltipId).remove();
+                button.remove();
+                $.ajax({
+                    method: 'PUT',
+                    url: '/account/photo/' + photoId
+                })
+            });
+        }
+        initPhotosEvents();
+        function afterPostPhoto(req, res) {
+            $('input[type="file"]').val('').parent().find('.custom-file-label').html('Choose a file');
+            var html = '<div class="photo"><img class="img-thumbnail" src="/uploads/pics/' + res.data.upload.name + '" width="300" height="300"><a class="set-profile-pic" href="" data-photo-id="' + res.data.upload.id + '" data-toggle="tooltip" data-placement="top" title="" data-original-title="Save this photo as a profile photo"><span class="badge badge-pill badge-primary"><i class="fa fa-thumbtack"></i></span></a><a class="remove-pic" href="" data-photo-id="' + res.data.upload.id + '" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete this photo"><span class="badge badge-pill badge-danger"><i class="fa fa-eraser"></i></span></a></div>'
+            $('.photos-list').append(html);
+            initPhotosEvents();
+            $('[data-toggle="tooltip"]').tooltip({
+                container: 'body'
+            })
+        }
+        function afterInfosUpdate(req, res) {
+            $('.profile-link').attr('href', '/' + $('input[name="username"]').val());
+        }
+
+        new google.maps.places.Autocomplete(document.querySelector('input[name="location"]'), {});

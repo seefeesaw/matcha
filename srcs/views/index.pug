@@ -1,0 +1,115 @@
+extends layout.pug
+
+block style
+    style.
+        .form-signin {
+            width: 100%;
+            max-width: 330px;
+            padding: 15px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .form-signin .form-control {
+            position: relative;
+            box-sizing: border-box;
+            height: auto;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        .form-signin .form-control:focus {
+            z-index: 2;
+        }
+
+        .form-signin input[type="email"] {
+            margin-bottom: -1px;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .form-signin input[type="password"] {
+            margin-bottom: 10px;
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+
+block content
+    .container
+        form.form-signin(method='post', action='/signin', data-ajax)
+            h1.h3.mb-3.font-weight-normal Log in
+
+            .ajax-msg
+
+            label.sr-only() username
+            input#inputEmail.form-control(type='text', placeholder="username", name='username', required='')
+
+            label.sr-only(for='inputPassword') Password
+            input#inputPassword.form-control(type='password', placeholder='Password', name='password', required='')
+
+            button.btn.btn-block.btn-link(type='button', data-target='#lostPassword', data-toggle='modal')
+                em
+                    small I forgot my password
+
+            button.btn.btn-lg.btn-primary.btn-block(type='submit') Log In
+            button.btn.btn-success.btn-block.btn-lg(data-target='#signup', type='button', data-toggle='modal') Register
+
+
+    .modal.fade#lostPassword(tabindex='-1', role='dialog')
+        .modal-dialog(role='document')
+            .modal-content
+                .modal-header
+                    h5.modal-title I've lost my password
+                    button.close(type='button', data-dismiss='modal', aria-label='Close')
+                        span(aria-hidden='true') ×
+                form(method='post', action='/account/lost-password', data-ajax)
+                    .modal-body
+
+                        .ajax-msg
+                            .alert.alert-info
+                                em A reset email will be sent to you to allow you to change your password.
+
+                        .form-group
+                            label Email
+                            input.form-control(type='email', placeholder="Your account email", name='email')
+
+                    .modal-footer
+                        button.btn.btn-primary(type='submit') Send mail
+
+    .modal.fade#signup(tabindex='-1', role='dialog')
+        .modal-dialog(role='document')
+            .modal-content
+                .modal-header
+                    h5.modal-title Register
+                    button.close(type='button', data-dismiss='modal', aria-label='Close')
+                        span(aria-hidden='true') ×
+                form(method='post', action='/signup', data-ajax)
+                    .modal-body
+
+                        .ajax-msg
+
+                        .form-group
+                            label First name
+                            input.form-control(type='text', name='name')
+                        .form-group
+                            label Last name
+                            input.form-control(type='text', name='last_name')
+                        .form-group
+                            label username
+                            input.form-control(type='text', name='username')
+                            small.form-text.text-muted Your nickname is displayed to other users
+                        .form-group
+                            label Email
+                            input.form-control(type='email', name='email')
+                            small.form-text.text-muted Your email will remain confidential
+                        .form-group
+                            label Password
+                            input.form-control(type='password', name='password')
+                            small.form-text.text-muted Your password must be secure
+                        .form-group
+                            label Password Confirmation
+                            input.form-control(type='password', name='password_confirmation')
+
+                    .modal-footer
+                        button.btn.btn-primary(type='submit') Register
